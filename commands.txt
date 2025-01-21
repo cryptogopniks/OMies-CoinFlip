@@ -1,0 +1,6 @@
+
+./build.sh
+
+./codegen.sh
+
+yarn run json
