@@ -1,8 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 
-use cosmwasm_std::Addr;
-
-use super::types::{UserInfo, WeightInfo};
+use super::types::{Range, Side, UserInfo};
 
 #[cw_serde]
 pub struct MigrateMsg {
@@ -12,14 +11,15 @@ pub struct MigrateMsg {
 #[cw_serde]
 pub struct InstantiateMsg {
     pub worker: Option<String>,
+    pub bet: Option<Range>,
     pub denom: Option<String>,
-    pub distribution: Option<Vec<WeightInfo>>,
+    pub platform_fee: Option<Decimal>,
 }
 
 #[cw_serde]
 pub enum ExecuteMsg {
     // users
-    Flip {},
+    Flip(Side),
 
     Claim {},
 
@@ -27,36 +27,46 @@ pub enum ExecuteMsg {
     AcceptAdminRole {},
 
     // admin, worker
+    Deposit {},
+
+    Withdraw {
+        amount: Uint128,
+    },
+
     UpdateConfig {
         admin: Option<String>,
         worker: Option<String>,
+        bet: Option<Range>,
         denom: Option<String>,
-        distribution: Option<Vec<WeightInfo>>,
+        platform_fee: Option<Decimal>,
     },
 
-    Lock {},
+    Pause {},
 
-    Unlock {},
+    Unpause {},
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(crate::platform::types::Config)]
-    QueryConfig {},
+    #[returns(super::types::Config)]
+    Config {},
 
-    #[returns(crate::platform::types::UserInfo)]
-    QueryUser { address: String },
+    #[returns(super::types::AppInfo)]
+    AppInfo {},
 
-    #[returns(Vec<QueryUserListResponseItem>)]
-    QueryUserList {
+    #[returns(super::types::UserInfo)]
+    User { address: String },
+
+    #[returns(Vec<UserListRespItem>)]
+    UserList {
+        amount: u32,
         start_after: Option<String>,
-        limit: Option<u32>,
     },
 }
 
 #[cw_serde]
-pub struct QueryUserListResponseItem {
+pub struct UserListRespItem {
     pub address: Addr,
     pub info: UserInfo,
 }

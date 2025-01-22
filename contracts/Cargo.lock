@@ -269,6 +269,7 @@ dependencies = [
  "cw20",
  "cw20-base",
  "cw721",
+ "hashing-helper",
  "serde",
  "thiserror",
 ]
@@ -1080,6 +1081,20 @@ checksum = "f950b2377845cebe5cf8b5165cb3cc1a5e0fa5cfa3e1f7f55707d8fd82e0a7b7"
 dependencies = [
  "der",
  "spki",
+]
+
+[[package]]
+name = "platform"
+version = "1.0.0"
+dependencies = [
+ "cf-base",
+ "cosmwasm-schema 2.2.0",
+ "cosmwasm-std 2.2.0",
+ "cw-storage-plus 2.0.0",
+ "cw2 2.0.0",
+ "hashing-helper",
+ "semver",
+ "serde",
 ]
 
 [[package]]

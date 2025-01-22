@@ -6,7 +6,7 @@ license = "Apache-2.0"
 
 [workspace]
 members = [
-    # "contracts/*",
+    "contracts/*",
     "packages/*",
     # "tests"
 ]
@@ -50,4 +50,4 @@ cf-base = { path = "./packages/cf-base" }
 hashing-helper = { path = "./packages/hashing-helper" }
 
 # contracts
-# platform = { path = "./contracts/platform" }
+platform = { path = "./contracts/platform" }

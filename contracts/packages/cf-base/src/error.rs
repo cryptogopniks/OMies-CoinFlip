@@ -76,6 +76,9 @@ pub enum ContractError {
     #[error("Exceeded tokens per owner limit!")]
     TokenLimit,
 
+    #[error("Bet is out of range!")]
+    BetIsOutOfRange,
+
     #[error("Parsing previous version error!")]
     ParsingPrevVersion,
 
