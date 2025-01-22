@@ -31,6 +31,7 @@ pub enum ExecuteMsg {
 
     Withdraw {
         amount: Uint128,
+        recipient: Option<String>,
     },
 
     UpdateConfig {

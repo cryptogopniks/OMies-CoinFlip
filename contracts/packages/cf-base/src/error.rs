@@ -40,6 +40,9 @@ pub enum ContractError {
     #[error("It's too late to accept admin role!")]
     TransferAdminDeadline,
 
+    #[error("Not enough liquidity to withdraw funds!")]
+    NotEnoughLiquidity,
+
     #[error("Chain ID is not found!")]
     ChainIdIsNotFound,
 

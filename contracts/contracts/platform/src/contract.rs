@@ -39,7 +39,9 @@ pub fn execute(
         // e::try_claim(deps, env, info),
         ExecuteMsg::Deposit {} => e::try_deposit(deps, env, info),
 
-        ExecuteMsg::Withdraw { amount } => unimplemented!(),
+        ExecuteMsg::Withdraw { amount, recipient } => {
+            e::try_withdraw(deps, env, info, amount, recipient)
+        }
 
         ExecuteMsg::AcceptAdminRole {} => e::try_accept_admin_role(deps, env, info),
 

@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    coins, to_json_binary, Addr, Decimal, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
-    Uint128, WasmMsg,
+    coins, to_json_binary, Addr, BankMsg, Decimal, DepsMut, Env, MessageInfo, Response, StdResult,
+    Storage, Uint128, WasmMsg,
 };
 
 use cf_base::{
@@ -20,17 +20,9 @@ use hashing_helper::base::calc_hash_bytes;
 
 use crate::helpers::{check_pause_state, get_random_weight};
 
-//    // users
 //    Flip(Side),
 
 //    Claim {},
-
-//    // admin, worker
-//    Deposit {},
-
-//    Withdraw {
-//        amount: Uint128,
-//    },
 
 pub fn try_deposit(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let (sender_address, asset_amount, asset_info) = check_funds(
@@ -51,6 +43,10 @@ pub fn try_deposit(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
         AuthType::Admin,
     )?;
 
+    if asset_amount.is_zero() {
+        Err(ContractError::ZeroAmount)?;
+    }
+
     // check fund denom
     if denom != config.denom {
         Err(ContractError::WrongAssetType)?;
@@ -63,6 +59,51 @@ pub fn try_deposit(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
     })?;
 
     Ok(Response::new().add_attribute("action", "try_deposit"))
+}
+
+pub fn try_withdraw(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    amount: Uint128,
+    recipient: Option<String>,
+) -> Result<Response, ContractError> {
+    let (sender_address, ..) = check_funds(deps.as_ref(), &info, FundsType::Empty)?;
+    let config = CONFIG.load(deps.storage)?;
+
+    check_authorization(
+        &sender_address,
+        &config.admin,
+        &config.worker,
+        AuthType::Admin,
+    )?;
+
+    if amount.is_zero() {
+        Err(ContractError::ZeroAmount)?;
+    }
+
+    APP_INFO.update(deps.storage, |mut x| -> StdResult<_> {
+        if amount > x.balance {
+            Err(ContractError::NotEnoughLiquidity)?;
+        }
+
+        x.deposited -= std::cmp::min(amount, x.deposited);
+        x.balance -= amount;
+        Ok(x)
+    })?;
+
+    let msg = BankMsg::Send {
+        to_address: recipient
+            .map(|x| deps.api.addr_validate(&x))
+            .transpose()?
+            .unwrap_or(sender_address)
+            .to_string(),
+        amount: coins(amount.u128(), config.denom),
+    };
+
+    Ok(Response::new()
+        .add_message(msg)
+        .add_attribute("action", "try_withdraw"))
 }
 
 pub fn try_accept_admin_role(
