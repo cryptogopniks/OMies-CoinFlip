@@ -33,7 +33,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Flip(side) => unimplemented!(),
+        ExecuteMsg::Flip(side) => e::try_flip(deps, env, info, side),
 
         ExecuteMsg::Claim {} => unimplemented!(),
         // e::try_claim(deps, env, info),
@@ -49,9 +49,8 @@ pub fn execute(
             admin,
             worker,
             bet,
-            denom,
             platform_fee,
-        } => e::try_update_config(deps, env, info, admin, worker, bet, denom, platform_fee),
+        } => e::try_update_config(deps, env, info, admin, worker, bet, platform_fee),
 
         ExecuteMsg::Pause {} => e::try_pause(deps, env, info),
 

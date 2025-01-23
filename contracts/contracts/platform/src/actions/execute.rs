@@ -1,28 +1,98 @@
-use cosmwasm_std::{
-    coins, to_json_binary, Addr, BankMsg, Decimal, DepsMut, Env, MessageInfo, Response, StdResult,
-    Storage, Uint128, WasmMsg,
-};
+use cosmwasm_std::{Decimal, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
 
 use cf_base::{
-    converters::address_to_salt,
+    assets::Token,
     error::ContractError,
-    hash_generator::types::Hash,
     platform::{
         state::{
             APP_INFO, CONFIG, FLIP_COOLDOWN, IS_PAUSED, NORMALIZED_DECIMAL, TRANSFER_ADMIN_STATE,
             TRANSFER_ADMIN_TIMEOUT, USERS,
         },
-        types::{Config, Range, TransferAdminState, UserInfo},
+        types::{Config, Range, Side, TransferAdminState},
     },
-    utils::{check_authorization, check_funds, AuthType, FundsType},
+    utils::{check_authorization, check_funds, get_transfer_msg, AuthType, FundsType},
 };
-use hashing_helper::base::calc_hash_bytes;
 
 use crate::helpers::{check_pause_state, get_random_weight};
 
-//    Flip(Side),
+pub fn try_flip(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    side: Side,
+) -> Result<Response, ContractError> {
+    let mut response = Response::new().add_attribute("action", "try_flip");
+    check_pause_state(deps.storage)?;
+    let (sender_address, asset_amount, asset_info) = check_funds(
+        deps.as_ref(),
+        &info,
+        FundsType::Single {
+            sender: None,
+            amount: None,
+        },
+    )?;
+    let block_time = env.block.time.seconds();
+    let normalized_decimal = NORMALIZED_DECIMAL.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
+    let mut app_info = APP_INFO.load(deps.storage)?;
+    let mut user = USERS
+        .load(deps.storage, &sender_address)
+        .unwrap_or_default();
 
-//    Claim {},
+    // don't allow to flip multiple coins in single tx
+    if block_time < user.last_flip_date + FLIP_COOLDOWN {
+        Err(ContractError::MultipleFlipsPerTx)?;
+    }
+
+    // check fund amount
+    if asset_amount.is_zero() {
+        Err(ContractError::ZeroAmount)?;
+    }
+
+    config.bet.validate(asset_amount)?;
+
+    // check fund denom
+    if asset_info.try_get_native()? != config.denom {
+        Err(ContractError::WrongAssetType)?;
+    }
+
+    let random_weight = get_random_weight(&env, &sender_address, &normalized_decimal)?;
+    let is_winner = side.is_winner(random_weight, config.platform_fee);
+    let prize = if is_winner {
+        Uint128::new(2) * asset_amount
+    } else {
+        Uint128::zero()
+    };
+
+    if is_winner {
+        app_info.user_stats.wins.increase(prize);
+        user.stats.wins.increase(prize);
+
+        if app_info.balance < prize {
+            app_info.user_unclaimed += prize;
+            user.unclaimed += prize;
+        } else {
+            app_info.balance -= prize;
+            response = response.add_message(get_transfer_msg(&sender_address, prize, &asset_info)?);
+        }
+    } else {
+        app_info.balance += asset_amount;
+    }
+
+    app_info.user_stats.bets.increase(asset_amount);
+    app_info.update_gain();
+    app_info.update_revenue();
+
+    user.stats.bets.increase(asset_amount);
+    user.update_gain();
+    user.last_flip_date = block_time;
+
+    NORMALIZED_DECIMAL.save(deps.storage, &random_weight)?;
+    APP_INFO.save(deps.storage, &app_info)?;
+    USERS.save(deps.storage, &sender_address, &user)?;
+
+    Ok(response.add_attribute("prize", prize))
+}
 
 pub fn try_deposit(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let (sender_address, asset_amount, asset_info) = check_funds(
@@ -92,14 +162,11 @@ pub fn try_withdraw(
         Ok(x)
     })?;
 
-    let msg = BankMsg::Send {
-        to_address: recipient
-            .map(|x| deps.api.addr_validate(&x))
-            .transpose()?
-            .unwrap_or(sender_address)
-            .to_string(),
-        amount: coins(amount.u128(), config.denom),
-    };
+    let recipient = recipient
+        .map(|x| deps.api.addr_validate(&x))
+        .transpose()?
+        .unwrap_or(sender_address);
+    let msg = get_transfer_msg(&recipient, amount, &Token::new_native(&config.denom))?;
 
     Ok(Response::new()
         .add_message(msg)
@@ -153,7 +220,6 @@ pub fn try_update_config(
     admin: Option<String>,
     worker: Option<String>,
     bet: Option<Range>,
-    denom: Option<String>,
     platform_fee: Option<Decimal>,
 ) -> Result<Response, ContractError> {
     let (sender_address, ..) = check_funds(deps.as_ref(), &info, FundsType::Empty)?;
@@ -188,16 +254,23 @@ pub fn try_update_config(
     }
 
     if let Some(x) = bet {
+        if x.min > x.max {
+            Err(ContractError::ImproperMinBet)?;
+        }
+
+        if x.max.is_zero() {
+            Err(ContractError::ZeroMaxBet)?;
+        }
+
         config.bet = x;
         is_config_updated = true;
     }
 
-    if let Some(x) = denom {
-        config.denom = x;
-        is_config_updated = true;
-    }
-
     if let Some(x) = platform_fee {
+        if x > Decimal::one() {
+            Err(ContractError::FeeIsOutOfRange)?;
+        }
+
         config.platform_fee = x;
         is_config_updated = true;
     }

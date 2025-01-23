@@ -7,8 +7,8 @@ use cf_base::{
     platform::{
         msg::InstantiateMsg,
         state::{
-            APP_INFO, BET_MAX, BET_MIN, CONFIG, CONTRACT_NAME, DENOM, INITIAL_WEIGHT, IS_PAUSED,
-            NORMALIZED_DECIMAL, PLATFORM_FEE, TRANSFER_ADMIN_STATE,
+            APP_INFO, BET_MAX, BET_MIN, CONFIG, CONTRACT_NAME, DENOM, IS_PAUSED,
+            NORMALIZED_DECIMAL, PLATFORM_FEE, SEED, TRANSFER_ADMIN_STATE,
         },
         types::{AppInfo, Config, Range, TransferAdminState},
     },
@@ -48,14 +48,14 @@ pub fn try_instantiate(
                 .transpose()
                 .unwrap_or(Some(sender.to_owned())),
             bet: msg.bet.unwrap_or(Range::new(BET_MIN, BET_MAX)),
-            denom: msg.denom.unwrap_or(String::from(DENOM)),
+            denom: String::from(DENOM),
             platform_fee: msg.platform_fee.unwrap_or(str_to_dec(PLATFORM_FEE)),
         },
     )?;
 
     NORMALIZED_DECIMAL.save(
         deps.storage,
-        &get_random_weight(&env, sender, &str_to_dec(INITIAL_WEIGHT))?,
+        &get_random_weight(&env, sender, &str_to_dec(SEED))?,
     )?;
     APP_INFO.save(deps.storage, &AppInfo::default())?;
 

@@ -5,12 +5,12 @@ use super::types::{AppInfo, Config, TransferAdminState, UserInfo};
 
 pub const CONTRACT_NAME: &str = "CryptoGopniks: OMies CoinFlip";
 
-pub const INITIAL_WEIGHT: &str = "0.88";
+pub const SEED: &str = "8888";
 pub const BET_MIN: u64 = 1_000_000;
 pub const BET_MAX: u64 = 20_000_000;
 pub const DENOM: &str = "uom";
 pub const PLATFORM_FEE: &str = "0.1";
-pub const FLIP_COOLDOWN: u64 = 1;
+pub const FLIP_COOLDOWN: u64 = 3;
 pub const TRANSFER_ADMIN_TIMEOUT: u64 = 7 * 24 * 3_600;
 
 pub const IS_PAUSED: Item<bool> = Item::new("is_paused");

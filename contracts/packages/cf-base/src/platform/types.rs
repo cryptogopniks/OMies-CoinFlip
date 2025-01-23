@@ -1,7 +1,10 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Decimal, StdResult, Uint128};
 
-use crate::{converters::str_to_dec, error::ContractError};
+use crate::{
+    converters::{str_to_dec, u128_to_dec},
+    error::ContractError,
+};
 
 #[cw_serde]
 pub enum Side {
@@ -36,6 +39,17 @@ pub struct StatsItem {
     pub value: Uint128,
 }
 
+impl StatsItem {
+    pub fn increase(&mut self, value: Uint128) {
+        self.count += 1;
+        self.value += value;
+    }
+}
+
+fn get_gain(bets: &StatsItem, wins: &StatsItem) -> Decimal {
+    u128_to_dec(wins.value) / u128_to_dec(bets.value)
+}
+
 #[derive(Default)]
 #[cw_serde]
 pub struct UserInfo {
@@ -44,6 +58,12 @@ pub struct UserInfo {
     pub gain: Decimal,
     pub unclaimed: Uint128,
     pub last_flip_date: u64,
+}
+
+impl UserInfo {
+    pub fn update_gain(&mut self) {
+        self.gain = get_gain(&self.stats.bets, &self.stats.wins);
+    }
 }
 
 #[derive(Default)]
@@ -65,6 +85,17 @@ pub struct AppInfo {
     /// revenue = balance - deposited - user_unclaimed
     /// revenue ≈ platform_fee * total_bets
     pub revenue: Uint128,
+}
+
+impl AppInfo {
+    pub fn update_gain(&mut self) {
+        self.user_gain = get_gain(&self.user_stats.bets, &self.user_stats.wins);
+    }
+
+    pub fn update_revenue(&mut self) {
+        self.revenue =
+            self.balance - std::cmp::min(self.deposited + self.user_unclaimed, self.balance);
+    }
 }
 
 #[cw_serde]

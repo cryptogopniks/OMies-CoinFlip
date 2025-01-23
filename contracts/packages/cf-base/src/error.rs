@@ -82,6 +82,18 @@ pub enum ContractError {
     #[error("Bet is out of range!")]
     BetIsOutOfRange,
 
+    #[error("Min bet is great than max bet!")]
+    ImproperMinBet,
+
+    #[error("Max bet can't be zero!")]
+    ZeroMaxBet,
+
+    #[error("A user can't flip multiple coins in single tx!")]
+    MultipleFlipsPerTx,
+
+    #[error("Platform fee must be from 0 to 1!")]
+    FeeIsOutOfRange,
+
     #[error("Parsing previous version error!")]
     ParsingPrevVersion,
 

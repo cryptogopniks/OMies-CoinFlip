@@ -12,7 +12,6 @@ pub struct MigrateMsg {
 pub struct InstantiateMsg {
     pub worker: Option<String>,
     pub bet: Option<Range>,
-    pub denom: Option<String>,
     pub platform_fee: Option<Decimal>,
 }
 
@@ -38,7 +37,6 @@ pub enum ExecuteMsg {
         admin: Option<String>,
         worker: Option<String>,
         bet: Option<Range>,
-        denom: Option<String>,
         platform_fee: Option<Decimal>,
     },
 
