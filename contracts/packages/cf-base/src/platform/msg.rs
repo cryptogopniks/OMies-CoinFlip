@@ -18,7 +18,9 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     // users
-    Flip(Side),
+    Flip {
+        side: Side,
+    },
 
     Claim {},
 

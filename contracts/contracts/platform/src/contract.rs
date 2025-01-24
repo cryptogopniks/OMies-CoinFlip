@@ -33,7 +33,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Flip(side) => e::try_flip(deps, env, info, side),
+        ExecuteMsg::Flip { side } => e::try_flip(deps, env, info, side),
 
         ExecuteMsg::Claim {} => e::try_claim(deps, env, info),
 

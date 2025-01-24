@@ -1,0 +1,36 @@
+{
+  "CHAINS": [
+    {
+      "NAME": "mantra",
+      "PREFIX": "mantra",
+      "OPTIONS": [
+        {
+          "TYPE": "test",
+          "DENOM": "uom",
+          "CHAIN_ID": "mantra-dukong-1",
+          "RPC_LIST": [
+            "https://rpc.dukong.mantrachain.io:443",
+            "https://mantra-testnet-rpc.publicnode.com:443"
+          ],
+          "GAS_PRICE_AMOUNT": 0.02,
+          "STORE_CODE_GAS_MULTIPLIER": 21.5,
+          "CONTRACTS": [
+            {
+              "WASM": "platform.wasm",
+              "LABEL": "platform",
+              "PERMISSION": [
+                "mantra1f37v0rdvrred27tlqqcpkrqpzfv6ddr2zjrm2h"
+              ],
+              "INIT_MSG": "{}",
+              "MIGRATE_MSG": "{\"version\":\"1.0.0\"}",
+              "UPDATE_MSG": "{\"update_config\":{}}",
+              "CODE": 0,
+              "ADDRESS": ""
+            }
+          ],
+          "IBC": []
+        }
+      ]
+    }
+  ]
+}

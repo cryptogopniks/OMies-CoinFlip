@@ -83,7 +83,7 @@ impl PlatformExtension for Project {
             self,
             sender,
             &self.get_platform_address(),
-            &ExecuteMsg::Flip(side),
+            &ExecuteMsg::Flip { side },
             amount,
             asset,
         )
