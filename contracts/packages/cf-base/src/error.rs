@@ -88,6 +88,9 @@ pub enum ContractError {
     #[error("Max bet can't be zero!")]
     ZeroMaxBet,
 
+    #[error("The user doesn't have rewards!")]
+    ZeroRewardsAmount,
+
     #[error("A user can't flip multiple coins in single tx!")]
     MultipleFlipsPerTx,
 

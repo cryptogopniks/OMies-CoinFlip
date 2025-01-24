@@ -94,6 +94,42 @@ pub fn try_flip(
     Ok(response.add_attribute("prize", prize))
 }
 
+pub fn try_claim(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    check_pause_state(deps.storage)?;
+    let (sender_address, ..) = check_funds(deps.as_ref(), &info, FundsType::Empty)?;
+    let config = CONFIG.load(deps.storage)?;
+    let mut app_info = APP_INFO.load(deps.storage)?;
+    let mut user = USERS
+        .load(deps.storage, &sender_address)
+        .unwrap_or_default();
+
+    // check rewards
+    if user.unclaimed.is_zero() {
+        Err(ContractError::ZeroRewardsAmount)?;
+    }
+
+    // check app balance
+    if user.unclaimed > app_info.balance {
+        Err(ContractError::NotEnoughLiquidity)?;
+    }
+
+    let msg = get_transfer_msg(
+        &sender_address,
+        user.unclaimed,
+        &Token::new_native(&config.denom),
+    )?;
+
+    app_info.balance -= user.unclaimed;
+    app_info.user_unclaimed -= user.unclaimed;
+
+    user.unclaimed = Uint128::zero();
+    USERS.save(deps.storage, &sender_address, &user)?;
+
+    Ok(Response::new()
+        .add_message(msg)
+        .add_attribute("action", "try_claim"))
+}
+
 pub fn try_deposit(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let (sender_address, asset_amount, asset_info) = check_funds(
         deps.as_ref(),
