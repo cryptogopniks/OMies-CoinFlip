@@ -6,11 +6,13 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { Coin, StdFee } from "@cosmjs/amino";
-import { Uint128, Decimal, InstantiateMsg, Range, ExecuteMsg, Side, QueryMsg, MigrateMsg, AppInfo, Stats, StatsItem, Addr, Config, UserInfo, ArrayOfUserListRespItem, UserListRespItem } from "./Platform.types";
+import { Uint128, Decimal, InstantiateMsg, Range, ExecuteMsg, Side, QueryMsg, MigrateMsg, SignedDecimal, Int256, AppInfo, Revenue, Stats, StatsItem, Addr, Config, UserInfo, ArrayOfUserListRespItem, UserListRespItem } from "./Platform.types";
 export interface PlatformReadOnlyInterface {
   contractAddress: string;
   config: () => Promise<Config>;
   appInfo: () => Promise<AppInfo>;
+  requiredToDeposit: () => Promise<Uint128>;
+  availableToWithdraw: () => Promise<Uint128>;
   user: ({
     address
   }: {
@@ -32,6 +34,8 @@ export class PlatformQueryClient implements PlatformReadOnlyInterface {
     this.contractAddress = contractAddress;
     this.config = this.config.bind(this);
     this.appInfo = this.appInfo.bind(this);
+    this.requiredToDeposit = this.requiredToDeposit.bind(this);
+    this.availableToWithdraw = this.availableToWithdraw.bind(this);
     this.user = this.user.bind(this);
     this.userList = this.userList.bind(this);
   }
@@ -43,6 +47,16 @@ export class PlatformQueryClient implements PlatformReadOnlyInterface {
   appInfo = async (): Promise<AppInfo> => {
     return this.client.queryContractSmart(this.contractAddress, {
       app_info: {}
+    });
+  };
+  requiredToDeposit = async (): Promise<Uint128> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      required_to_deposit: {}
+    });
+  };
+  availableToWithdraw = async (): Promise<Uint128> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      available_to_withdraw: {}
     });
   };
   user = async ({

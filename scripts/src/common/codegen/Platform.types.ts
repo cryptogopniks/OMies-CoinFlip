@@ -48,6 +48,10 @@ export type QueryMsg = {
 } | {
   app_info: {};
 } | {
+  required_to_deposit: {};
+} | {
+  available_to_withdraw: {};
+} | {
   user: {
     address: string;
   };
@@ -60,13 +64,19 @@ export type QueryMsg = {
 export interface MigrateMsg {
   version: string;
 }
+export type SignedDecimal = string;
+export type Int256 = string;
 export interface AppInfo {
+  average_fee: SignedDecimal;
   balance: Uint128;
   deposited: Uint128;
-  revenue: Uint128;
-  user_gain: Decimal;
+  revenue: Revenue;
   user_stats: Stats;
   user_unclaimed: Uint128;
+}
+export interface Revenue {
+  current: Int256;
+  total: Int256;
 }
 export interface Stats {
   bets: StatsItem;
@@ -85,8 +95,8 @@ export interface Config {
   worker?: Addr | null;
 }
 export interface UserInfo {
-  gain: Decimal;
   last_flip_date: number;
+  roi: SignedDecimal;
   stats: Stats;
   unclaimed: Uint128;
 }

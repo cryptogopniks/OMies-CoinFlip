@@ -520,6 +520,16 @@ async function getCwQueryHelpers(chainId: string, rpc: string) {
     return logAndReturn(res, isDisplayed);
   }
 
+  async function cwQueryRequiredToDeposit(isDisplayed: boolean = false) {
+    const res = await platformQueryClient.requiredToDeposit();
+    return logAndReturn(res, isDisplayed);
+  }
+
+  async function cwQueryAvailableToWithdraw(isDisplayed: boolean = false) {
+    const res = await platformQueryClient.availableToWithdraw();
+    return logAndReturn(res, isDisplayed);
+  }
+
   async function cwQueryUser(address: string, isDisplayed: boolean = false) {
     const res = await platformQueryClient.user({ address });
     return logAndReturn(res, isDisplayed);
@@ -547,6 +557,8 @@ async function getCwQueryHelpers(chainId: string, rpc: string) {
     platform: {
       cwQueryConfig,
       cwQueryAppInfo,
+      cwQueryRequiredToDeposit,
+      cwQueryAvailableToWithdraw,
       cwQueryUser,
       cwQueryUserList,
     },

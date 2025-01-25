@@ -8,7 +8,7 @@ import { Coin } from "@cosmjs/amino";
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Uint128, Decimal, InstantiateMsg, Range, ExecuteMsg, Side, QueryMsg, MigrateMsg, AppInfo, Stats, StatsItem, Addr, Config, UserInfo, ArrayOfUserListRespItem, UserListRespItem } from "./Platform.types";
+import { Uint128, Decimal, InstantiateMsg, Range, ExecuteMsg, Side, QueryMsg, MigrateMsg, SignedDecimal, Int256, AppInfo, Revenue, Stats, StatsItem, Addr, Config, UserInfo, ArrayOfUserListRespItem, UserListRespItem } from "./Platform.types";
 export interface PlatformMsg {
   contractAddress: string;
   sender: string;

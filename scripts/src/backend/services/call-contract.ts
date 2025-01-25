@@ -54,6 +54,8 @@ async function main() {
     const { getBalance, getAllBalances, getTimeInNanos } = sgQueryHelpers;
     const { sgMultiSend, sgIbcHookCall, sgSend } = sgExecHelpers;
     console.clear();
+
+    await platform.cwQueryConfig(true);
   } catch (error) {
     l(error);
   }

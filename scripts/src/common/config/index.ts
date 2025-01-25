@@ -57,21 +57,24 @@ export const CHAIN_CONFIG: ChainConfig = {
             "https://mantra-testnet-rpc.publicnode.com:443",
           ],
           GAS_PRICE_AMOUNT: 0.02,
-          STORE_CODE_GAS_MULTIPLIER: 21.5,
+          STORE_CODE_GAS_MULTIPLIER: 115,
           CONTRACTS: [
             {
               WASM: "platform.wasm",
               LABEL: "platform",
               PERMISSION: [ADDRESS.TESTNET.MANTRA.ADMIN],
-              INIT_MSG: toJson<PlatformTypes.InstantiateMsg>({}),
+              INIT_MSG: toJson<PlatformTypes.InstantiateMsg>({
+                bet: { min: `${500_000}`, max: `${10_000_000}` },
+              }),
               MIGRATE_MSG: toJson<PlatformTypes.MigrateMsg>({
                 version: "1.0.0",
               }),
               UPDATE_MSG: toJson<PlatformTypes.ExecuteMsg>({
                 update_config: {},
               }),
-              CODE: 0,
-              ADDRESS: "",
+              CODE: 365,
+              ADDRESS:
+                "mantra17gc3eztg9xk7w7fkx0525c6jt0et2aapkfpca5xf5txkdwc68y8q4teya8",
             },
           ],
           IBC: [],

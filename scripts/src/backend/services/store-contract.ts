@@ -92,7 +92,7 @@ async function main() {
         CONTRACT.PERMISSION
       );
       const wasmBinary = await readFile(
-        rootPath(`../artifacts/${CONTRACT.WASM}`)
+        rootPath(`../contracts/artifacts/${CONTRACT.WASM}`)
       );
       const compressed = gzip(wasmBinary, { level: 9 });
 
