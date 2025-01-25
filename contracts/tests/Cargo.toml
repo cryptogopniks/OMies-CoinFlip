@@ -27,6 +27,7 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 cw-multi-test = { workspace = true }
 speculoos = { workspace = true }
+rand = { workspace = true }
 
 cf-base = { workspace = true }
 

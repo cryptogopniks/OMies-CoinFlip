@@ -64,8 +64,8 @@ impl ProjectAccount {
 
 #[derive(Debug, Clone, Copy, Display, IntoStaticStr, EnumIter)]
 pub enum ProjectCoin {
-    #[strum(serialize = "factory/wasm1s/ustars")]
-    Stars,
+    #[strum(serialize = "uom")]
+    Om,
     #[strum(serialize = "factory/wasm1s/uusdc")]
     Usdc,
     #[strum(serialize = "factory/wasm1s/ukuji")]
@@ -108,7 +108,7 @@ impl GetPrice for ProjectAsset {
 impl GetPrice for ProjectCoin {
     fn get_price(&self) -> Decimal {
         match self {
-            ProjectCoin::Stars => str_to_dec("0.01"),
+            ProjectCoin::Om => str_to_dec("3.5"),
             ProjectCoin::Usdc => str_to_dec("1"),
             ProjectCoin::Kuji => str_to_dec("1.5"),
             ProjectCoin::Usk => str_to_dec("1"),
@@ -142,7 +142,7 @@ impl GetDecimals for ProjectAsset {
 impl GetDecimals for ProjectCoin {
     fn get_decimals(&self) -> u8 {
         match self {
-            ProjectCoin::Stars => DEFAULT_DECIMALS,
+            ProjectCoin::Om => DEFAULT_DECIMALS,
             ProjectCoin::Usdc => DEFAULT_DECIMALS,
             ProjectCoin::Kuji => DEFAULT_DECIMALS,
             ProjectCoin::Usk => DEFAULT_DECIMALS,
@@ -211,18 +211,18 @@ impl From<ProjectToken> for ProjectAsset {
 #[derive(Debug, Clone, Copy, EnumIter)]
 pub enum ProjectPair {
     AtomLuna,
-    StarsInj,
-    StarsLuna,
-    StarsNoria,
+    OmInj,
+    OmLuna,
+    OmNoria,
 }
 
 impl ProjectPair {
     pub fn split_pair(&self) -> (ProjectAsset, ProjectAsset) {
         match self {
             ProjectPair::AtomLuna => (ProjectToken::Atom.into(), ProjectToken::Luna.into()),
-            ProjectPair::StarsInj => (ProjectCoin::Kuji.into(), ProjectToken::Inj.into()),
-            ProjectPair::StarsLuna => (ProjectCoin::Kuji.into(), ProjectToken::Luna.into()),
-            ProjectPair::StarsNoria => (ProjectCoin::Kuji.into(), ProjectCoin::Usk.into()),
+            ProjectPair::OmInj => (ProjectCoin::Kuji.into(), ProjectToken::Inj.into()),
+            ProjectPair::OmLuna => (ProjectCoin::Kuji.into(), ProjectToken::Luna.into()),
+            ProjectPair::OmNoria => (ProjectCoin::Kuji.into(), ProjectCoin::Usk.into()),
         }
     }
 }

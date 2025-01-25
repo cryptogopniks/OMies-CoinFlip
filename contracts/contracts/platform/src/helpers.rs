@@ -1,7 +1,9 @@
-use cosmwasm_std::{Addr, Decimal, Env, StdResult, Storage};
+use cosmwasm_std::{Addr, Decimal, Env, Int256, StdResult, Storage, Uint128};
 
 use cf_base::{
-    converters::address_to_salt, error::ContractError, hash_generator::types::Hash,
+    converters::{address_to_salt, str_to_dec},
+    error::ContractError,
+    hash_generator::types::Hash,
     platform::state::IS_PAUSED,
 };
 use hashing_helper::base::calc_hash_bytes;
@@ -25,4 +27,14 @@ pub fn get_random_weight(
     let hash_bytes = calc_hash_bytes(password, salt)?;
 
     Ok(Hash::from(hash_bytes).to_norm_dec())
+}
+
+pub fn calc_available_to_withdraw(deposited: Uint128, revenue_current: Int256) -> Uint128 {
+    let available_to_withdraw = Int256::from(deposited) + revenue_current;
+
+    if available_to_withdraw.is_negative() {
+        return Uint128::zero();
+    } else {
+        str_to_dec(&available_to_withdraw.to_string()).to_uint_floor()
+    }
 }

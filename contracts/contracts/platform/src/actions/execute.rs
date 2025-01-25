@@ -1,4 +1,4 @@
-use cosmwasm_std::{Decimal, DepsMut, Env, MessageInfo, Response, StdResult, Uint128};
+use cosmwasm_std::{Decimal, DepsMut, Env, Int256, MessageInfo, Response, StdResult, Uint128};
 
 use cf_base::{
     assets::Token,
@@ -13,7 +13,7 @@ use cf_base::{
     utils::{check_authorization, check_funds, get_transfer_msg, AuthType, FundsType},
 };
 
-use crate::helpers::{check_pause_state, get_random_weight};
+use crate::helpers::{calc_available_to_withdraw, check_pause_state, get_random_weight};
 
 pub fn try_flip(
     deps: DepsMut,
@@ -64,24 +64,28 @@ pub fn try_flip(
         Uint128::zero()
     };
 
-    if is_winner {
-        app_info.user_stats.wins.increase(prize);
-        user.stats.wins.increase(prize);
+    app_info.revenue.total += Int256::from(asset_amount);
+    app_info.revenue.current += Int256::from(asset_amount);
+    app_info.balance += asset_amount;
 
-        if app_info.balance < prize {
-            app_info.user_unclaimed += prize;
-            user.unclaimed += prize;
-        } else {
+    if is_winner {
+        app_info.revenue.total -= Int256::from(prize);
+        app_info.revenue.current -= Int256::from(prize);
+
+        if app_info.balance >= prize {
             app_info.balance -= prize;
             response = response.add_message(get_transfer_msg(&sender_address, prize, &asset_info)?);
+        } else {
+            app_info.user_unclaimed += prize;
+            user.unclaimed += prize;
         }
-    } else {
-        app_info.balance += asset_amount;
+
+        app_info.user_stats.wins.increase(prize);
+        user.stats.wins.increase(prize);
     }
 
     app_info.user_stats.bets.increase(asset_amount);
     app_info.update_gain();
-    app_info.update_revenue();
 
     user.stats.bets.increase(asset_amount);
     user.update_gain();
@@ -189,12 +193,23 @@ pub fn try_withdraw(
     }
 
     APP_INFO.update(deps.storage, |mut x| -> StdResult<_> {
-        if amount > x.balance {
+        // doesn't allow to withdraw funds required to pay unclaimed rewards
+        if calc_available_to_withdraw(x.deposited, x.revenue.current) < amount {
             Err(ContractError::NotEnoughLiquidity)?;
         }
-
-        x.deposited -= std::cmp::min(amount, x.deposited);
         x.balance -= amount;
+
+        // withdraw deposited first
+        if x.deposited >= amount {
+            x.deposited -= amount;
+        } else {
+            let diff = Int256::from(amount - x.deposited);
+            x.deposited = Uint128::zero();
+
+            // then withdraw current revenue
+            x.revenue.current -= diff;
+        }
+
         Ok(x)
     })?;
 

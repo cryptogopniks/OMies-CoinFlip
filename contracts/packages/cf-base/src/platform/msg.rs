@@ -56,6 +56,9 @@ pub enum QueryMsg {
     #[returns(super::types::AppInfo)]
     AppInfo {},
 
+    #[returns(Uint128)]
+    AvailableToWithdraw {},
+
     #[returns(super::types::UserInfo)]
     User { address: String },
 

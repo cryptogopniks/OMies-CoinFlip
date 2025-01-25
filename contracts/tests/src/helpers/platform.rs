@@ -53,13 +53,15 @@ pub trait PlatformExtension {
         platform_fee: Option<&str>,
     ) -> StdResult<AppResponse>;
 
-    fn lending_platform_try_pause(&mut self, sender: ProjectAccount) -> StdResult<AppResponse>;
+    fn platform_try_pause(&mut self, sender: ProjectAccount) -> StdResult<AppResponse>;
 
-    fn lending_platform_try_unpause(&mut self, sender: ProjectAccount) -> StdResult<AppResponse>;
+    fn platform_try_unpause(&mut self, sender: ProjectAccount) -> StdResult<AppResponse>;
 
     fn platform_query_config(&self) -> StdResult<Config>;
 
     fn platform_query_app_info(&self) -> StdResult<AppInfo>;
+
+    fn platform_query_available_to_withdraw(&self) -> StdResult<Uint128>;
 
     fn platform_query_user(&self, address: impl ToString) -> StdResult<UserInfo>;
 
@@ -175,7 +177,7 @@ impl PlatformExtension for Project {
     }
 
     #[track_caller]
-    fn lending_platform_try_pause(&mut self, sender: ProjectAccount) -> StdResult<AppResponse> {
+    fn platform_try_pause(&mut self, sender: ProjectAccount) -> StdResult<AppResponse> {
         self.app
             .execute_contract(
                 sender.into(),
@@ -187,7 +189,7 @@ impl PlatformExtension for Project {
     }
 
     #[track_caller]
-    fn lending_platform_try_unpause(&mut self, sender: ProjectAccount) -> StdResult<AppResponse> {
+    fn platform_try_unpause(&mut self, sender: ProjectAccount) -> StdResult<AppResponse> {
         self.app
             .execute_contract(
                 sender.into(),
@@ -210,6 +212,14 @@ impl PlatformExtension for Project {
         self.app
             .wrap()
             .query_wasm_smart(self.get_platform_address(), &QueryMsg::AppInfo {})
+    }
+
+    #[track_caller]
+    fn platform_query_available_to_withdraw(&self) -> StdResult<Uint128> {
+        self.app.wrap().query_wasm_smart(
+            self.get_platform_address(),
+            &QueryMsg::AvailableToWithdraw {},
+        )
     }
 
     #[track_caller]

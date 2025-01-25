@@ -66,6 +66,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
         QueryMsg::AppInfo {} => to_json_binary(&q::query_app_info(deps, env)?),
 
+        QueryMsg::AvailableToWithdraw {} => {
+            to_json_binary(&q::query_available_to_withdraw(deps, env)?)
+        }
+
         QueryMsg::User { address } => to_json_binary(&q::query_user(deps, env, address)?),
 
         QueryMsg::UserList {

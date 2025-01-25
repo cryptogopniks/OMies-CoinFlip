@@ -1,4 +1,4 @@
-use cosmwasm_std::{Deps, Env, Order, StdResult};
+use cosmwasm_std::{Deps, Env, Order, StdResult, Uint128};
 use cw_storage_plus::Bound;
 
 use cf_base::platform::{
@@ -7,12 +7,19 @@ use cf_base::platform::{
     types::{AppInfo, Config, UserInfo},
 };
 
+use crate::helpers::calc_available_to_withdraw;
+
 pub fn query_config(deps: Deps, _env: Env) -> StdResult<Config> {
     CONFIG.load(deps.storage)
 }
 
 pub fn query_app_info(deps: Deps, _env: Env) -> StdResult<AppInfo> {
     APP_INFO.load(deps.storage)
+}
+
+pub fn query_available_to_withdraw(deps: Deps, _env: Env) -> StdResult<Uint128> {
+    let x = APP_INFO.load(deps.storage)?;
+    Ok(calc_available_to_withdraw(x.deposited, x.revenue.current))
 }
 
 pub fn query_user(deps: Deps, _env: Env, address: String) -> StdResult<UserInfo> {
