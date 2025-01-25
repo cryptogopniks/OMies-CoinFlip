@@ -7,7 +7,7 @@ use cf_base::platform::{
     types::{AppInfo, Config, UserInfo},
 };
 
-use crate::helpers::calc_available_to_withdraw;
+use crate::helpers::{calc_available_to_withdraw, calc_required_to_deposit};
 
 pub fn query_config(deps: Deps, _env: Env) -> StdResult<Config> {
     CONFIG.load(deps.storage)
@@ -15,6 +15,11 @@ pub fn query_config(deps: Deps, _env: Env) -> StdResult<Config> {
 
 pub fn query_app_info(deps: Deps, _env: Env) -> StdResult<AppInfo> {
     APP_INFO.load(deps.storage)
+}
+
+pub fn query_required_to_deposit(deps: Deps, _env: Env) -> StdResult<Uint128> {
+    let x = APP_INFO.load(deps.storage)?;
+    Ok(calc_required_to_deposit(x.balance, x.user_unclaimed))
 }
 
 pub fn query_available_to_withdraw(deps: Deps, _env: Env) -> StdResult<Uint128> {

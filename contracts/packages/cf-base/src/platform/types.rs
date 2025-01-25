@@ -1,8 +1,8 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Decimal, Int256, StdResult, Uint128};
+use cosmwasm_std::{Addr, Decimal, Int256, SignedDecimal, StdResult, Uint128};
 
 use crate::{
-    converters::{str_to_dec, u128_to_dec},
+    converters::{str_to_dec, str_to_sdec, u128_to_dec},
     error::ContractError,
 };
 
@@ -46,27 +46,28 @@ impl StatsItem {
     }
 }
 
-fn get_user_gain(bets: &StatsItem, wins: &StatsItem) -> Decimal {
+fn get_user_roi(bets: &StatsItem, wins: &StatsItem) -> SignedDecimal {
     if bets.value.is_zero() {
-        return Decimal::one();
+        return SignedDecimal::zero();
     }
 
-    u128_to_dec(wins.value) / u128_to_dec(bets.value)
+    let ratio = u128_to_dec(wins.value) / u128_to_dec(bets.value);
+    str_to_sdec(&ratio.to_string()) - SignedDecimal::one()
 }
 
 #[derive(Default)]
 #[cw_serde]
 pub struct UserInfo {
     pub stats: Stats,
-    /// user_gain = user_wins / user_bets
-    pub gain: Decimal,
+    /// user_roi = user_wins / user_bets - 1
+    pub roi: SignedDecimal,
     pub unclaimed: Uint128,
     pub last_flip_date: u64,
 }
 
 impl UserInfo {
-    pub fn update_gain(&mut self) {
-        self.gain = get_user_gain(&self.stats.bets, &self.stats.wins);
+    pub fn update_roi(&mut self) {
+        self.roi = get_user_roi(&self.stats.bets, &self.stats.wins);
     }
 }
 
@@ -87,8 +88,8 @@ pub struct AppInfo {
     /// total user unclaimed
     pub user_unclaimed: Uint128,
 
-    /// app_gain = 2 - user_wins / user_bets
-    pub gain: Decimal,
+    /// average_fee = 1 - user_wins / user_bets
+    pub average_fee: SignedDecimal,
     /// increased on deposit
     /// decreased on withdraw
     pub deposited: Uint128,
@@ -101,9 +102,8 @@ pub struct AppInfo {
 }
 
 impl AppInfo {
-    pub fn update_gain(&mut self) {
-        self.gain =
-            u128_to_dec(2_u128) - get_user_gain(&self.user_stats.bets, &self.user_stats.wins);
+    pub fn update_average_fee(&mut self) {
+        self.average_fee = -get_user_roi(&self.user_stats.bets, &self.user_stats.wins);
     }
 }
 

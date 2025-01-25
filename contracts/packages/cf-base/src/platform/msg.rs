@@ -57,6 +57,9 @@ pub enum QueryMsg {
     AppInfo {},
 
     #[returns(Uint128)]
+    RequiredToDeposit {},
+
+    #[returns(Uint128)]
     AvailableToWithdraw {},
 
     #[returns(super::types::UserInfo)]

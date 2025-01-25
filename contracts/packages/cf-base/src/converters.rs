@@ -1,10 +1,14 @@
 use std::str::{from_utf8, FromStr};
 
-use cosmwasm_std::{Decimal, Decimal256, StdError, StdResult, Uint128, Uint256};
+use cosmwasm_std::{Decimal, Decimal256, SignedDecimal, StdError, StdResult, Uint128, Uint256};
 use hashing_helper::base::ENC_KEY_LEN;
 
 pub fn str_to_dec(s: &str) -> Decimal {
     Decimal::from_str(s).unwrap()
+}
+
+pub fn str_to_sdec(s: &str) -> SignedDecimal {
+    SignedDecimal::from_str(s).unwrap()
 }
 
 pub fn str_to_dec256(s: &str) -> Decimal256 {

@@ -57,14 +57,18 @@ fn const_period_const_amount_const_side() -> StdResult<()> {
     p.platform_try_withdraw(ProjectAccount::Admin, 20_000, None)?;
     p.platform_try_deposit(ProjectAccount::Admin, 6_000, ProjectCoin::Om)?;
 
+    let alice = p.platform_query_user(ProjectAccount::Alice)?;
     let available_to_withdraw = p.platform_query_available_to_withdraw()?;
     let app_info = p.platform_query_app_info()?;
+    let required_to_deposit = p.platform_query_required_to_deposit()?;
 
     println!(
         "available_to_withdraw {:#?}\n",
         available_to_withdraw.u128()
     );
     println!("app_info {:#?}\n", app_info);
+    println!("alice {:#?}\n", alice);
+    println!("required_to_deposit {:#?}\n", required_to_deposit.u128());
 
     // let num = rand::thread_rng().gen_range(0..100);
 

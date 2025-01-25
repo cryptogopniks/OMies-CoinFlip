@@ -61,6 +61,8 @@ pub trait PlatformExtension {
 
     fn platform_query_app_info(&self) -> StdResult<AppInfo>;
 
+    fn platform_query_required_to_deposit(&self) -> StdResult<Uint128>;
+
     fn platform_query_available_to_withdraw(&self) -> StdResult<Uint128>;
 
     fn platform_query_user(&self, address: impl ToString) -> StdResult<UserInfo>;
@@ -212,6 +214,13 @@ impl PlatformExtension for Project {
         self.app
             .wrap()
             .query_wasm_smart(self.get_platform_address(), &QueryMsg::AppInfo {})
+    }
+
+    #[track_caller]
+    fn platform_query_required_to_deposit(&self) -> StdResult<Uint128> {
+        self.app
+            .wrap()
+            .query_wasm_smart(self.get_platform_address(), &QueryMsg::RequiredToDeposit {})
     }
 
     #[track_caller]

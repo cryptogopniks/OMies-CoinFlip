@@ -85,10 +85,10 @@ pub fn try_flip(
     }
 
     app_info.user_stats.bets.increase(asset_amount);
-    app_info.update_gain();
+    app_info.update_average_fee();
 
     user.stats.bets.increase(asset_amount);
-    user.update_gain();
+    user.update_roi();
     user.last_flip_date = block_time;
 
     NORMALIZED_DECIMAL.save(deps.storage, &random_weight)?;
