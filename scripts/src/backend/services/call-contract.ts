@@ -55,7 +55,7 @@ async function main() {
     const { sgMultiSend, sgIbcHookCall, sgSend } = sgExecHelpers;
     console.clear();
 
-    await platform.cwQueryConfig(true);
+    await platform.cwQueryAppInfo(true);
   } catch (error) {
     l(error);
   }

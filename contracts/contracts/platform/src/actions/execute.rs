@@ -125,8 +125,9 @@ pub fn try_claim(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response
 
     app_info.balance -= user.unclaimed;
     app_info.user_unclaimed -= user.unclaimed;
-
     user.unclaimed = Uint128::zero();
+
+    APP_INFO.save(deps.storage, &app_info)?;
     USERS.save(deps.storage, &sender_address, &user)?;
 
     Ok(Response::new()

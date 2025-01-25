@@ -24,7 +24,7 @@
               "INIT_MSG": "{\"bet\":{\"min\":\"500000\",\"max\":\"10000000\"}}",
               "MIGRATE_MSG": "{\"version\":\"1.0.0\"}",
               "UPDATE_MSG": "{\"update_config\":{}}",
-              "CODE": 365,
+              "CODE": 367,
               "ADDRESS": "mantra17gc3eztg9xk7w7fkx0525c6jt0et2aapkfpca5xf5txkdwc68y8q4teya8"
             }
           ],

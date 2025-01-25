@@ -72,7 +72,7 @@ export const CHAIN_CONFIG: ChainConfig = {
               UPDATE_MSG: toJson<PlatformTypes.ExecuteMsg>({
                 update_config: {},
               }),
-              CODE: 365,
+              CODE: 367,
               ADDRESS:
                 "mantra17gc3eztg9xk7w7fkx0525c6jt0et2aapkfpca5xf5txkdwc68y8q4teya8",
             },

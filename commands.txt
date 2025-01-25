@@ -5,6 +5,7 @@
 
 yarn run json
 yarn run store "mantra-dukong-1|platform"
+yarn run migrate "mantra-dukong-1|platform"
 yarn run inst "mantra-dukong-1|platform"
 yarn run call "mantra-dukong-1|"
 
