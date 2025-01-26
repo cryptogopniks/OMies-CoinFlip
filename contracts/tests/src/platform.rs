@@ -3,16 +3,19 @@ use cw_multi_test::Executor;
 
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
-use cf_base::platform::{
-    msg::MigrateMsg,
-    types::{AppInfo, Range, Side, Stats, StatsItem},
+use cf_base::{
+    error::ContractError,
+    platform::{
+        msg::MigrateMsg,
+        types::{AppInfo, Range, Side, Stats, StatsItem},
+    },
 };
 use speculoos::assert_that;
 
 use crate::helpers::{
     platform::PlatformExtension,
     suite::{
-        core::Project,
+        core::{assert_error, Project},
         types::{ProjectAccount, ProjectCoin},
     },
 };
@@ -35,6 +38,114 @@ fn migrate_default() {
             p.get_platform_code_id(),
         )
         .unwrap();
+}
+
+#[test]
+fn guards() -> StdResult<()> {
+    const SIDE: Side = Side::Head;
+    const AMOUNT: u128 = 1_000;
+
+    let mut p = Project::new();
+
+    // try update config
+    let res = p
+        .platform_try_update_config(
+            ProjectAccount::Alice,
+            None,
+            None,
+            Some(Range::new(0, AMOUNT)),
+            None,
+        )
+        .unwrap_err();
+    assert_error(&res, ContractError::Unauthorized);
+
+    let res = p
+        .platform_try_update_config(
+            ProjectAccount::Admin,
+            None,
+            None,
+            Some(Range::new(0_u128, 0_u128)),
+            None,
+        )
+        .unwrap_err();
+    assert_error(&res, ContractError::ZeroMaxBet);
+
+    let res = p
+        .platform_try_update_config(
+            ProjectAccount::Admin,
+            None,
+            None,
+            Some(Range::new(2 * AMOUNT, AMOUNT)),
+            None,
+        )
+        .unwrap_err();
+    assert_error(&res, ContractError::ImproperMinBet);
+
+    let res = p
+        .platform_try_update_config(
+            ProjectAccount::Admin,
+            None,
+            None,
+            Some(Range::new(0, AMOUNT)),
+            Some("1.5"),
+        )
+        .unwrap_err();
+    assert_error(&res, ContractError::FeeIsOutOfRange);
+
+    p.platform_try_update_config(
+        ProjectAccount::Admin,
+        None,
+        None,
+        Some(Range::new(0, AMOUNT)),
+        None,
+    )?;
+
+    // flip
+    let res = p
+        .platform_try_flip(ProjectAccount::Alice, SIDE, 0, ProjectCoin::Om)
+        .unwrap_err();
+    assert_error(&res, "Cannot transfer empty coins amount");
+
+    let res = p
+        .platform_try_flip(ProjectAccount::Alice, SIDE, 2 * AMOUNT, ProjectCoin::Om)
+        .unwrap_err();
+    assert_error(&res, ContractError::BetIsOutOfRange);
+
+    let res = p
+        .platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Usdc)
+        .unwrap_err();
+    assert_error(&res, ContractError::WrongAssetType);
+
+    p.platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Om)?;
+
+    let res = p
+        .platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Om)
+        .unwrap_err();
+    assert_error(&res, ContractError::MultipleFlipsPerTx);
+
+    // claim
+    let res = p.platform_try_claim(ProjectAccount::Alice).unwrap_err();
+    assert_error(&res, ContractError::ZeroRewardsAmount);
+
+    p.platform_try_withdraw(ProjectAccount::Admin, None, None)?;
+
+    p.wait(5);
+    p.platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Om)?;
+
+    let res = p.platform_try_claim(ProjectAccount::Alice).unwrap_err();
+    assert_error(&res, ContractError::NotEnoughLiquidity);
+
+    // withdraw
+    p.platform_try_deposit(ProjectAccount::Admin, 2 * AMOUNT, ProjectCoin::Om)?;
+
+    let res = p
+        .platform_try_withdraw(ProjectAccount::Admin, Some(AMOUNT + 1), None)
+        .unwrap_err();
+    assert_error(&res, ContractError::NotEnoughLiquidity);
+
+    p.platform_try_withdraw(ProjectAccount::Admin, Some(AMOUNT), None)?;
+
+    Ok(())
 }
 
 #[test]
@@ -662,17 +773,282 @@ fn multiple_users() -> StdResult<()> {
     Ok(())
 }
 
-// TODO
-// guards
-// balance manipulations
-// claim/unclaimed
-// +big numbers
-// +ns matters
-// +const_period_const_amount_const_side
-// +var_period_const_amount_const_side
-// +const_period_var_amount_const_side
-// +const_period_const_amount_var_side
-// +var_period_var_amount_const_side
-// +const_period_var_amount_var_side
-// +var_period_var_amount_var_side
-// +multiple_users
+#[test]
+fn win_lose_claim() -> StdResult<()> {
+    const ROUNDS: u16 = 2;
+    const DELAY: u64 = 3;
+    const SIDE: Side = Side::Head;
+    const AMOUNT: u128 = 1_000;
+
+    let mut p = Project::new();
+
+    p.platform_try_update_config(
+        ProjectAccount::Admin,
+        None,
+        None,
+        Some(Range::new(0, AMOUNT)),
+        None,
+    )?;
+
+    let alice_balance_before = p.query_balance(ProjectAccount::Alice, &ProjectCoin::Om)?;
+    let platform_balance_before = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+
+    p.wait(1);
+    for _ in 0..ROUNDS {
+        p.platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Om)?;
+        p.wait(DELAY);
+    }
+
+    p.platform_try_claim(ProjectAccount::Alice)?;
+
+    let alice_balance_after = p.query_balance(ProjectAccount::Alice, &ProjectCoin::Om)?;
+    let platform_balance_after = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+
+    let AppInfo {
+        user_stats,
+        user_unclaimed,
+        average_fee,
+        balance,
+        revenue,
+        ..
+    } = p.platform_query_app_info()?;
+
+    assert_that(&(alice_balance_before - alice_balance_after)).is_equal_to(0);
+    assert_that(&(platform_balance_after - platform_balance_before)).is_equal_to(0);
+
+    assert_that(&user_stats.bets.value.u128()).is_equal_to(2_000);
+    assert_that(&user_stats.wins.count).is_equal_to(1);
+    assert_that(&user_stats.wins.value.u128()).is_equal_to(2_000);
+    assert_that(&user_unclaimed.u128()).is_equal_to(0);
+    assert_that(&average_fee.to_string().as_str()).is_equal_to("0");
+    assert_that(&balance.u128()).is_equal_to(0);
+    assert_that(&revenue.total).is_equal_to(Int256::from(0));
+
+    Ok(())
+}
+
+#[test]
+fn win_win_lose_deposit_claim() -> StdResult<()> {
+    const ROUNDS: u16 = 2;
+    const DELAY: u64 = 3;
+    const SIDE: Side = Side::Head;
+    const AMOUNT: u128 = 1_000;
+
+    let mut p = Project::new();
+
+    p.platform_try_update_config(
+        ProjectAccount::Admin,
+        None,
+        None,
+        Some(Range::new(0, AMOUNT)),
+        None,
+    )?;
+
+    let alice_balance_before = p.query_balance(ProjectAccount::Alice, &ProjectCoin::Om)?;
+    let platform_balance_before = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+
+    p.wait(18);
+    for _ in 0..ROUNDS {
+        p.platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Om)?;
+        p.wait(DELAY);
+    }
+
+    p.wait(1);
+    p.platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Om)?;
+
+    p.platform_try_deposit(ProjectAccount::Admin, AMOUNT, ProjectCoin::Om)?;
+    p.platform_try_claim(ProjectAccount::Alice)?;
+
+    let alice_balance_after = p.query_balance(ProjectAccount::Alice, &ProjectCoin::Om)?;
+    let platform_balance_after = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+
+    let AppInfo {
+        user_stats,
+        user_unclaimed,
+        average_fee,
+        balance,
+        revenue,
+        ..
+    } = p.platform_query_app_info()?;
+
+    assert_that(&(alice_balance_after - alice_balance_before)).is_equal_to(1_000);
+    assert_that(&(platform_balance_after - platform_balance_before)).is_equal_to(0);
+
+    assert_that(&user_stats.bets.value.u128()).is_equal_to(3_000);
+    assert_that(&user_stats.wins.count).is_equal_to(2);
+    assert_that(&user_stats.wins.value.u128()).is_equal_to(4_000);
+    assert_that(&user_unclaimed.u128()).is_equal_to(0);
+    assert_that(&average_fee.to_string().as_str()).is_equal_to("-0.333333333333333333");
+    assert_that(&balance.u128()).is_equal_to(0);
+    assert_that(&revenue.total).is_equal_to(Int256::from(-1_000));
+
+    Ok(())
+}
+
+#[test]
+fn claiming_is_not_required() -> StdResult<()> {
+    const ROUNDS: u16 = 1_000;
+    const DELAY: u64 = 3;
+    const SIDE: Side = Side::Head;
+    const AMOUNT: u128 = 1_000;
+
+    let mut p = Project::new();
+
+    p.platform_try_update_config(
+        ProjectAccount::Admin,
+        None,
+        None,
+        Some(Range::new(0, AMOUNT)),
+        None,
+    )?;
+
+    p.platform_try_deposit(ProjectAccount::Admin, 10 * AMOUNT, ProjectCoin::Om)?;
+
+    let alice_balance_before = p.query_balance(ProjectAccount::Alice, &ProjectCoin::Om)?;
+    let platform_balance_before = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+
+    for _ in 0..ROUNDS {
+        p.platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Om)?;
+        p.wait(DELAY);
+    }
+
+    let alice_balance_after = p.query_balance(ProjectAccount::Alice, &ProjectCoin::Om)?;
+    let platform_balance_after = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+
+    let AppInfo {
+        user_stats,
+        user_unclaimed,
+        average_fee,
+        balance,
+        revenue,
+        ..
+    } = p.platform_query_app_info()?;
+
+    assert_that(&(alice_balance_before - alice_balance_after)).is_equal_to(104_000);
+    assert_that(&(platform_balance_after - platform_balance_before)).is_equal_to(104_000);
+
+    assert_that(&user_stats.bets.value.u128()).is_equal_to(1_000_000);
+    assert_that(&user_stats.wins.count).is_equal_to(448);
+    assert_that(&user_stats.wins.value.u128()).is_equal_to(896_000);
+    assert_that(&user_unclaimed.u128()).is_equal_to(0);
+    assert_that(&average_fee.to_string().as_str()).is_equal_to("0.104");
+    assert_that(&balance.u128()).is_equal_to(114_000);
+    assert_that(&revenue.total).is_equal_to(Int256::from(104_000));
+
+    Ok(())
+}
+
+#[test]
+fn balance_manipulations() -> StdResult<()> {
+    const ROUNDS: u16 = 200;
+    const DELAY: u64 = 3;
+    const SIDE: Side = Side::Head;
+    const AMOUNT: u128 = 1_000;
+
+    let mut p = Project::new();
+
+    p.platform_try_update_config(
+        ProjectAccount::Admin,
+        None,
+        None,
+        Some(Range::new(0, AMOUNT)),
+        None,
+    )?;
+
+    let admin_balance_before = p.query_balance(ProjectAccount::Admin, &ProjectCoin::Om)?;
+    let alice_balance_before = p.query_balance(ProjectAccount::Alice, &ProjectCoin::Om)?;
+    let platform_balance_before = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+
+    for _ in 0..ROUNDS {
+        p.platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Om)?;
+        p.wait(DELAY);
+    }
+
+    let alice_balance_after = p.query_balance(ProjectAccount::Alice, &ProjectCoin::Om)?;
+    let platform_balance_after = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+
+    let AppInfo {
+        user_stats,
+        user_unclaimed,
+        average_fee,
+        deposited,
+        balance,
+        revenue,
+    } = p.platform_query_app_info()?;
+
+    assert_that(&(alice_balance_before - alice_balance_after)).is_equal_to(36_000);
+    assert_that(&(platform_balance_after - platform_balance_before)).is_equal_to(36_000);
+
+    assert_that(&user_stats.bets.value.u128()).is_equal_to(200_000);
+    assert_that(&user_stats.wins.count).is_equal_to(87);
+    assert_that(&user_stats.wins.value.u128()).is_equal_to(174_000);
+    assert_that(&user_unclaimed.u128()).is_equal_to(10_000);
+    assert_that(&average_fee.to_string().as_str()).is_equal_to("0.13");
+    assert_that(&deposited.u128()).is_equal_to(0);
+    assert_that(&balance.u128()).is_equal_to(36_000);
+    assert_that(&revenue.total).is_equal_to(Int256::from(26_000));
+    assert_that(&revenue.current).is_equal_to(Int256::from(26_000));
+
+    p.platform_try_withdraw(ProjectAccount::Admin, None, None)?;
+    p.platform_try_deposit(ProjectAccount::Admin, AMOUNT, ProjectCoin::Om)?;
+
+    let AppInfo {
+        user_unclaimed,
+        deposited,
+        balance,
+        revenue,
+        ..
+    } = p.platform_query_app_info()?;
+
+    assert_that(&user_unclaimed.u128()).is_equal_to(10_000);
+    assert_that(&deposited.u128()).is_equal_to(1_000);
+    assert_that(&balance.u128()).is_equal_to(11_000);
+    assert_that(&revenue.total).is_equal_to(Int256::from(26_000));
+    assert_that(&revenue.current).is_equal_to(Int256::from(0));
+
+    p.wait(1);
+    for _ in 0..ROUNDS {
+        p.platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Om)?;
+        p.wait(DELAY);
+    }
+
+    p.platform_try_claim(ProjectAccount::Alice)?;
+
+    let AppInfo {
+        user_stats,
+        user_unclaimed,
+        average_fee,
+        deposited,
+        balance,
+        revenue,
+    } = p.platform_query_app_info()?;
+
+    assert_that(&user_stats.wins.value.u128()).is_equal_to(360_000);
+    assert_that(&user_unclaimed.u128()).is_equal_to(0);
+    assert_that(&average_fee.to_string().as_str()).is_equal_to("0.1");
+    assert_that(&deposited.u128()).is_equal_to(1_000);
+    assert_that(&balance.u128()).is_equal_to(15_000);
+    assert_that(&revenue.total).is_equal_to(Int256::from(40_000));
+    assert_that(&revenue.current).is_equal_to(Int256::from(14_000));
+
+    p.platform_try_withdraw(ProjectAccount::Admin, None, None)?;
+
+    let admin_balance_after = p.query_balance(ProjectAccount::Admin, &ProjectCoin::Om)?;
+    let platform_balance_after = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+    let AppInfo {
+        deposited,
+        balance,
+        revenue,
+        ..
+    } = p.platform_query_app_info()?;
+
+    assert_that(&(admin_balance_after - admin_balance_before)).is_equal_to(40_000);
+    assert_that(&(platform_balance_after - platform_balance_before)).is_equal_to(0);
+
+    assert_that(&deposited.u128()).is_equal_to(0);
+    assert_that(&balance.u128()).is_equal_to(0);
+    assert_that(&revenue.total).is_equal_to(Int256::from(40_000));
+    assert_that(&revenue.current).is_equal_to(Int256::from(0));
+
+    Ok(())
+}
