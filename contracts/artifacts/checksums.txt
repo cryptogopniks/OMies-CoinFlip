@@ -1,1 +1,1 @@
-99e8128b05ee20d376bf7e55919916da0ec56dda242a6b513a4df2cfbb64eff0  platform-x86_64.wasm
+662891080e0ea2ee7cb1b2ad746e1eb0e8478e1bbcfba8398b78ec1c4f96cac0  platform.wasm
