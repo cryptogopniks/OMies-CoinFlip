@@ -1,9 +1,9 @@
 import { PlatformMsgComposer } from "../codegen/Platform.message-composer";
 import { PlatformQueryClient } from "../codegen/Platform.client";
-import { Range } from "../codegen/Platform.types";
+import { Range, UserListRespItem } from "../codegen/Platform.types";
 
 import CONFIG_JSON from "../config/config.json";
-import { getLast, l, logAndReturn } from "../utils";
+import { getLast, getPaginationAmount, l, logAndReturn } from "../utils";
 import { toBase64, fromUtf8, toUtf8 } from "@cosmjs/encoding";
 import {
   MsgMigrateContract,
@@ -329,12 +329,11 @@ async function getCwExecHelpers(
   }
 
   async function cwWithdraw(
-    amount: number,
-    { recipient }: { recipient?: string },
+    { amount, recipient }: { amount?: number; recipient?: string },
     gasPrice: string
   ) {
     return await _msgWrapperWithGasPrice(
-      [platformMsgComposer.withdraw({ amount: amount.toString(), recipient })],
+      [platformMsgComposer.withdraw({ amount: amount?.toString(), recipient })],
       gasPrice
     );
   }
@@ -535,17 +534,33 @@ async function getCwQueryHelpers(chainId: string, rpc: string) {
     return logAndReturn(res, isDisplayed);
   }
 
-  // TODO: pQuery, snapshot
-  async function cwQueryUserList(
-    amount: number = 100,
-    startAfter: string | undefined = undefined,
+  async function pQueryUserList(
+    maxPaginationAmount: number,
+    maxCount: number = 0,
     isDisplayed: boolean = false
   ) {
-    const res = await platformQueryClient.userList({
-      amount,
-      startAfter,
-    });
-    return logAndReturn(res, isDisplayed);
+    const paginationAmount = getPaginationAmount(maxPaginationAmount, maxCount);
+
+    let allItems: UserListRespItem[] = [];
+    let lastItem: string | undefined = undefined;
+    let count: number = 0;
+
+    while (lastItem !== "" && count < (maxCount || count + 1)) {
+      const items: UserListRespItem[] = await platformQueryClient.userList({
+        amount: paginationAmount,
+        startAfter: lastItem,
+      });
+
+      lastItem = getLast(items)?.address || "";
+      allItems = [...allItems, ...items];
+      count += items.length;
+    }
+
+    if (maxCount) {
+      allItems = allItems.slice(0, maxCount);
+    }
+
+    return logAndReturn(allItems, isDisplayed);
   }
 
   return {
@@ -561,7 +576,7 @@ async function getCwQueryHelpers(chainId: string, rpc: string) {
       cwQueryRequiredToDeposit,
       cwQueryAvailableToWithdraw,
       cwQueryUser,
-      cwQueryUserList,
+      pQueryUserList,
     },
   };
 }

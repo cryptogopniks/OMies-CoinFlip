@@ -16,6 +16,7 @@
     "config": "ts-node ./src/backend/services/update-config.ts",
     "call": "ts-node ./src/backend/services/call-contract.ts",
     "types": "tsc -p ./src/backend/tsconfig.json",
+    "capture-users": "ts-node ./src/backend/services/capture/users.ts",
     "test": "jest"
   },
   "repository": {

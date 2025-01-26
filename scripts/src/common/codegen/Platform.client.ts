@@ -100,7 +100,7 @@ export interface PlatformInterface extends PlatformReadOnlyInterface {
     amount,
     recipient
   }: {
-    amount: Uint128;
+    amount?: Uint128;
     recipient?: string;
   }, fee?: number | StdFee | "auto", memo?: string, _funds?: Coin[]) => Promise<ExecuteResult>;
   updateConfig: ({
@@ -165,7 +165,7 @@ export class PlatformClient extends PlatformQueryClient implements PlatformInter
     amount,
     recipient
   }: {
-    amount: Uint128;
+    amount?: Uint128;
     recipient?: string;
   }, fee: number | StdFee | "auto" = "auto", memo?: string, _funds?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {

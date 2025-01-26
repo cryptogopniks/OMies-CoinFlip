@@ -9,6 +9,15 @@ yarn run migrate "mantra-dukong-1|platform"
 yarn run inst "mantra-dukong-1|platform"
 yarn run call "mantra-dukong-1|"
 
+yarn run json
+yarn run store "mantra-1|platform"
+yarn run migrate "mantra-1|platform"
+yarn run inst "mantra-1|platform"
+yarn run call "mantra-1|"
+
+yarn run capture-users "mantra-dukong-1|"
+
+yarn run capture-users "mantra-1|"
 
 // explorer
 https://explorer.mantrachain.io/MANTRA-Dukong/account/mantra1f37v0rdvrred27tlqqcpkrqpzfv6ddr2zjrm2h

@@ -24,7 +24,7 @@ export interface PlatformMsg {
     amount,
     recipient
   }: {
-    amount: Uint128;
+    amount?: Uint128;
     recipient?: string;
   }, _funds?: Coin[]) => MsgExecuteContractEncodeObject;
   updateConfig: ({
@@ -118,7 +118,7 @@ export class PlatformMsgComposer implements PlatformMsg {
     amount,
     recipient
   }: {
-    amount: Uint128;
+    amount?: Uint128;
     recipient?: string;
   }, _funds?: Coin[]): MsgExecuteContractEncodeObject => {
     return {

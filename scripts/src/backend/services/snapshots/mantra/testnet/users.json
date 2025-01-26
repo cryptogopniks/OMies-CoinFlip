@@ -1,0 +1,16 @@
+[
+  {
+    "address": "mantra1hvp3q00ypzrurd46h7c7c3hu86tx9uf80lfxn6",
+    "bets": {
+      "count": 19,
+      "value": 20
+    },
+    "wins": {
+      "count": 7,
+      "value": 14
+    },
+    "roi": -0.3,
+    "unclaimed": 2,
+    "lastFlipDate": "26.01.2025 14:46:23"
+  }
+]
