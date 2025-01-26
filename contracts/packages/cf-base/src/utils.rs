@@ -182,7 +182,7 @@ pub fn add_funds_to_exec_msg(
             // Case 2 `Swap` - only single cw20 token
             if (cw20_tokens.len() == 1) && native_tokens.is_empty() {
                 let (amount, token_address) =
-                    cw20_tokens.get(0).ok_or(ContractError::AssetIsNotFound)?;
+                    cw20_tokens.first().ok_or(ContractError::AssetIsNotFound)?;
 
                 return Ok(WasmMsg::Execute {
                     contract_addr: token_address.to_string(),

@@ -1,5 +1,5 @@
 {
-  "name": "snb-scripts",
+  "name": "scripts",
   "version": "1.0.0",
   "description": "",
   "main": "./dist/backend/index.js",
@@ -16,20 +16,20 @@
     "config": "ts-node ./src/backend/services/update-config.ts",
     "call": "ts-node ./src/backend/services/call-contract.ts",
     "types": "tsc -p ./src/backend/tsconfig.json",
-    "gov": "ts-node ./src/backend/services/gov-contract.ts",
+    "capture-users": "ts-node ./src/backend/services/capture/users.ts",
     "test": "jest"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cryptogopniks/GopLend"
+    "url": "git+https://github.com/cryptogopniks/OMies-CoinFlip"
   },
   "keywords": [],
   "author": "M. Daeva",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/cryptogopniks/GopLend/issues"
+    "url": "https://github.com/cryptogopniks/OMies-CoinFlip/issues"
   },
-  "homepage": "https://github.com/cryptogopniks/GopLend#readme",
+  "homepage": "https://github.com/cryptogopniks/OMies-CoinFlip#readme",
   "dependencies": {
     "@chain-registry/types": "^0.18.0",
     "@cosmjs/cosmwasm-stargate": "^0.32.2",

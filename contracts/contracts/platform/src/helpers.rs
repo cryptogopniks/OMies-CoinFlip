@@ -31,7 +31,7 @@ pub fn get_random_weight(
 
 pub fn calc_required_to_deposit(balance: Uint128, total_unclaimed: Uint128) -> Uint128 {
     if balance >= total_unclaimed {
-        return Uint128::zero();
+        Uint128::zero()
     } else {
         total_unclaimed - balance
     }
@@ -41,7 +41,7 @@ pub fn calc_available_to_withdraw(deposited: Uint128, revenue_current: Int256) -
     let available_to_withdraw = Int256::from(deposited) + revenue_current;
 
     if available_to_withdraw.is_negative() {
-        return Uint128::zero();
+        Uint128::zero()
     } else {
         str_to_dec(&available_to_withdraw.to_string()).to_uint_floor()
     }

@@ -27,7 +27,7 @@ export type ExecuteMsg = {
   deposit: {};
 } | {
   withdraw: {
-    amount: Uint128;
+    amount?: Uint128 | null;
     recipient?: string | null;
   };
 } | {

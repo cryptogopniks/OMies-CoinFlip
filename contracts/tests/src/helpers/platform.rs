@@ -40,7 +40,7 @@ pub trait PlatformExtension {
     fn platform_try_withdraw(
         &mut self,
         sender: ProjectAccount,
-        amount: u128,
+        amount: Option<u128>,
         recipient: Option<ProjectAccount>,
     ) -> StdResult<AppResponse>;
 
@@ -138,7 +138,7 @@ impl PlatformExtension for Project {
     fn platform_try_withdraw(
         &mut self,
         sender: ProjectAccount,
-        amount: u128,
+        amount: Option<u128>,
         recipient: Option<ProjectAccount>,
     ) -> StdResult<AppResponse> {
         self.app
@@ -146,7 +146,7 @@ impl PlatformExtension for Project {
                 sender.into(),
                 self.get_platform_address(),
                 &ExecuteMsg::Withdraw {
-                    amount: Uint128::new(amount),
+                    amount: amount.map(Uint128::new),
                     recipient: recipient.map(|x| x.to_string()),
                 },
                 &[],

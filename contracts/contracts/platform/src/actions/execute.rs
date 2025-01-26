@@ -125,8 +125,9 @@ pub fn try_claim(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response
 
     app_info.balance -= user.unclaimed;
     app_info.user_unclaimed -= user.unclaimed;
-
     user.unclaimed = Uint128::zero();
+
+    APP_INFO.save(deps.storage, &app_info)?;
     USERS.save(deps.storage, &sender_address, &user)?;
 
     Ok(Response::new()
@@ -175,11 +176,12 @@ pub fn try_withdraw(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    amount: Uint128,
+    amount: Option<Uint128>,
     recipient: Option<String>,
 ) -> Result<Response, ContractError> {
     let (sender_address, ..) = check_funds(deps.as_ref(), &info, FundsType::Empty)?;
     let config = CONFIG.load(deps.storage)?;
+    let mut amount_to_send = Uint128::zero();
 
     check_authorization(
         &sender_address,
@@ -188,22 +190,25 @@ pub fn try_withdraw(
         AuthType::Admin,
     )?;
 
-    if amount.is_zero() {
-        Err(ContractError::ZeroAmount)?;
-    }
-
     APP_INFO.update(deps.storage, |mut x| -> StdResult<_> {
-        // doesn't allow to withdraw funds required to pay unclaimed rewards
-        if calc_available_to_withdraw(x.deposited, x.revenue.current) < amount {
+        amount_to_send =
+            amount.unwrap_or(calc_available_to_withdraw(x.deposited, x.revenue.current));
+
+        if amount_to_send.is_zero() {
+            Err(ContractError::ZeroAmount)?;
+        }
+
+        // don't allow to withdraw funds required to pay unclaimed rewards
+        if calc_available_to_withdraw(x.deposited, x.revenue.current) < amount_to_send {
             Err(ContractError::NotEnoughLiquidity)?;
         }
-        x.balance -= amount;
+        x.balance -= amount_to_send;
 
         // withdraw deposited first
-        if x.deposited >= amount {
-            x.deposited -= amount;
+        if x.deposited >= amount_to_send {
+            x.deposited -= amount_to_send;
         } else {
-            let diff = Int256::from(amount - x.deposited);
+            let diff = Int256::from(amount_to_send - x.deposited);
             x.deposited = Uint128::zero();
 
             // then withdraw current revenue
@@ -217,7 +222,11 @@ pub fn try_withdraw(
         .map(|x| deps.api.addr_validate(&x))
         .transpose()?
         .unwrap_or(sender_address);
-    let msg = get_transfer_msg(&recipient, amount, &Token::new_native(&config.denom))?;
+    let msg = get_transfer_msg(
+        &recipient,
+        amount_to_send,
+        &Token::new_native(&config.denom),
+    )?;
 
     Ok(Response::new()
         .add_message(msg)

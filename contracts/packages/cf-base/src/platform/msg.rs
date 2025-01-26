@@ -31,7 +31,7 @@ pub enum ExecuteMsg {
     Deposit {},
 
     Withdraw {
-        amount: Uint128,
+        amount: Option<Uint128>,
         recipient: Option<String>,
     },
 
