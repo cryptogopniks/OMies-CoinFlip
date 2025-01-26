@@ -1,11 +1,11 @@
-use cosmwasm_std::{Int256, StdResult};
+use cosmwasm_std::{Int256, StdResult, Uint128};
 use cw_multi_test::Executor;
 
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
 use cf_base::platform::{
     msg::MigrateMsg,
-    types::{AppInfo, Range, Side},
+    types::{AppInfo, Range, Side, Stats, StatsItem},
 };
 use speculoos::assert_that;
 
@@ -515,12 +515,159 @@ fn var_period_var_amount_var_side() -> StdResult<()> {
     Ok(())
 }
 
+#[test]
+fn big_numbers() -> StdResult<()> {
+    const ROUNDS: u16 = 1_000;
+    const DELAY: u64 = 3;
+    const SIDE: Side = Side::Head;
+    const FEE: &str = "0.87";
+    const AMOUNT: u128 = 1_000_000_000_000_000;
+
+    let mut p = Project::new();
+
+    p.platform_try_update_config(
+        ProjectAccount::Admin,
+        None,
+        None,
+        Some(Range::new(0, AMOUNT)),
+        Some(FEE),
+    )?;
+
+    for _ in 0..ROUNDS {
+        p.platform_try_flip(ProjectAccount::Alice, SIDE, AMOUNT, ProjectCoin::Om)?;
+        p.wait(DELAY);
+    }
+
+    let available_to_withdraw = p.platform_query_available_to_withdraw()?;
+
+    let AppInfo {
+        user_stats,
+        user_unclaimed,
+        average_fee,
+        balance,
+        revenue,
+        ..
+    } = p.platform_query_app_info()?;
+
+    assert_that(&available_to_withdraw.u128()).is_equal_to(888_000_000_000_000_000);
+
+    p.platform_try_withdraw(
+        ProjectAccount::Admin,
+        Some(available_to_withdraw.u128()),
+        None,
+    )?;
+
+    assert_that(&user_stats.bets.value.u128()).is_equal_to(1_000_000_000_000_000_000);
+    assert_that(&user_stats.wins.count).is_equal_to(56);
+    assert_that(&user_stats.wins.value.u128()).is_equal_to(112_000_000_000_000_000);
+    assert_that(&user_unclaimed.u128()).is_equal_to(0);
+    assert_that(&average_fee.to_string().as_str()).is_equal_to("0.888");
+    assert_that(&balance.u128()).is_equal_to(888_000_000_000_000_000);
+    assert_that(&revenue.total).is_equal_to(Int256::from(888_000_000_000_000_000_i128));
+
+    Ok(())
+}
+
+#[test]
+fn multiple_users() -> StdResult<()> {
+    const ROUNDS: u16 = 1_000;
+    const DELAY: u64 = 3;
+    const AMOUNT: u128 = 1_000;
+
+    let mut p = Project::new();
+    let mut rng_1 = get_rng(42);
+    let mut rng_2 = get_rng(43);
+
+    p.platform_try_update_config(
+        ProjectAccount::Admin,
+        None,
+        None,
+        Some(Range::new(0, AMOUNT)),
+        None,
+    )?;
+
+    let alice_balance_before = p.query_balance(ProjectAccount::Alice, &ProjectCoin::Om)?;
+    let bob_balance_before = p.query_balance(ProjectAccount::Bob, &ProjectCoin::Om)?;
+    let platform_balance_before = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+
+    for _ in 0..ROUNDS {
+        let user = if rng_1.gen_range(0..=1) == 0 {
+            ProjectAccount::Alice
+        } else {
+            ProjectAccount::Bob
+        };
+        let side = if rng_2.gen_range(0..=1) == 0 {
+            Side::Head
+        } else {
+            Side::Tail
+        };
+
+        p.platform_try_flip(user, side, AMOUNT, ProjectCoin::Om)?;
+        p.wait(DELAY);
+    }
+
+    let alice_balance_after = p.query_balance(ProjectAccount::Alice, &ProjectCoin::Om)?;
+    let bob_balance_after = p.query_balance(ProjectAccount::Bob, &ProjectCoin::Om)?;
+    let platform_balance_after = p.query_balance(p.get_platform_address(), &ProjectCoin::Om)?;
+
+    let alice_info = p.platform_query_user(ProjectAccount::Alice)?;
+    let bob_info = p.platform_query_user(ProjectAccount::Bob)?;
+
+    let AppInfo {
+        user_stats,
+        user_unclaimed,
+        average_fee,
+        balance,
+        revenue,
+        ..
+    } = p.platform_query_app_info()?;
+
+    assert_that(&(alice_balance_before - alice_balance_after)).is_equal_to(61_000);
+    assert_that(&(bob_balance_before - bob_balance_after)).is_equal_to(39_000);
+    assert_that(&(platform_balance_after - platform_balance_before)).is_equal_to(100_000);
+
+    assert_that(&alice_info.roi.to_string().as_str()).is_equal_to("-0.126293995859213251");
+    assert_that(&alice_info.unclaimed.u128()).is_equal_to(0);
+    assert_that(&alice_info.stats).is_equal_to(&Stats {
+        bets: StatsItem {
+            count: 483,
+            value: Uint128::new(483_000),
+        },
+        wins: StatsItem {
+            count: 211,
+            value: Uint128::new(422_000),
+        },
+    });
+    assert_that(&bob_info.roi.to_string().as_str()).is_equal_to("-0.075435203094777563");
+    assert_that(&bob_info.unclaimed.u128()).is_equal_to(0);
+    assert_that(&bob_info.stats).is_equal_to(&Stats {
+        bets: StatsItem {
+            count: 517,
+            value: Uint128::new(517_000),
+        },
+        wins: StatsItem {
+            count: 239,
+            value: Uint128::new(478_000),
+        },
+    });
+
+    assert_that(&user_stats.bets.value.u128()).is_equal_to(1_000_000);
+    assert_that(&user_stats.wins.count).is_equal_to(450);
+    assert_that(&user_stats.wins.value.u128()).is_equal_to(900_000);
+    assert_that(&user_unclaimed.u128()).is_equal_to(0);
+    assert_that(&average_fee.to_string().as_str()).is_equal_to("0.1");
+    assert_that(&balance.u128()).is_equal_to(100_000);
+    assert_that(&revenue.total).is_equal_to(Int256::from(100_000));
+
+    Ok(())
+}
+
 // TODO
 // guards
-// big numbers
 // balance manipulations
-// +ns matters
 // claim/unclaimed
+// +big numbers
+// +ns matters
 // +const_period_const_amount_const_side
 // +var_period_const_amount_const_side
 // +const_period_var_amount_const_side
@@ -528,4 +675,4 @@ fn var_period_var_amount_var_side() -> StdResult<()> {
 // +var_period_var_amount_const_side
 // +const_period_var_amount_var_side
 // +var_period_var_amount_var_side
-// multiple_users
+// +multiple_users
