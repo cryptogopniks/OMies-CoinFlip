@@ -8,6 +8,7 @@ export type Wasm = "platform.wasm";
 
 export type Label = "platform";
 
+// DAO
 export const ADDRESS = {
   MAINNET: {
     MANTRA: {
@@ -79,6 +80,8 @@ export const CHAIN_CONFIG: ChainConfig = {
           ],
           IBC: [],
         },
+
+        // TODO: MANTRA main
       ],
     },
   ],

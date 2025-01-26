@@ -535,6 +535,7 @@ async function getCwQueryHelpers(chainId: string, rpc: string) {
     return logAndReturn(res, isDisplayed);
   }
 
+  // TODO: pQuery, snapshot
   async function cwQueryUserList(
     amount: number = 100,
     startAfter: string | undefined = undefined,
