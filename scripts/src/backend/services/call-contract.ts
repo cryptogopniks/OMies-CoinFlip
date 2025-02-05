@@ -55,7 +55,13 @@ async function main() {
     const { sgMultiSend, sgIbcHookCall, sgSend } = sgExecHelpers;
     console.clear();
 
+    // await h.platform.cwDeposit(
+    //   10_000_000,
+    //   { native: { denom: "uom" } },
+    //   gasPrice
+    // );
     await platform.cwQueryAppInfo(true);
+    await platform.cwQueryConfig(true);
   } catch (error) {
     l(error);
   }
