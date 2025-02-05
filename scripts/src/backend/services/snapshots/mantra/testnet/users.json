@@ -1,16 +1,44 @@
 [
   {
-    "address": "mantra1hvp3q00ypzrurd46h7c7c3hu86tx9uf80lfxn6",
+    "address": "mantra1j5ft99lyd36e5fyp8kh8ze7qcj00relmvt5prd",
     "bets": {
-      "count": 19,
-      "value": 20
+      "count": 5,
+      "value": 2.5
     },
     "wins": {
-      "count": 7,
-      "value": 14
+      "count": 3,
+      "value": 3
     },
-    "roi": -0.3,
-    "unclaimed": 2,
-    "lastFlipDate": "26.01.2025 14:46:23"
+    "roi": 0.2,
+    "unclaimed": 0,
+    "lastFlipDate": "27.01.2025 19:06:05"
+  },
+  {
+    "address": "mantra1hvp3q00ypzrurd46h7c7c3hu86tx9uf80lfxn6",
+    "bets": {
+      "count": 51,
+      "value": 85.6
+    },
+    "wins": {
+      "count": 23,
+      "value": 91.2
+    },
+    "roi": 0.065,
+    "unclaimed": 22,
+    "lastFlipDate": "27.01.2025 18:45:28"
+  },
+  {
+    "address": "mantra1c3yt57kz5mstnc2n08n47phjumn57ds0ayqc6v",
+    "bets": {
+      "count": 1,
+      "value": 0.5
+    },
+    "wins": {
+      "count": 0,
+      "value": 0
+    },
+    "roi": -1,
+    "unclaimed": 0,
+    "lastFlipDate": "27.01.2025 18:05:37"
   }
 ]

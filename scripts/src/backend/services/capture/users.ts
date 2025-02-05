@@ -61,7 +61,7 @@ async function main() {
                 count: winsCount,
                 value: toNumber(winsValue),
               },
-              roi: Number(roi),
+              roi: floor(Number(roi), 3),
               unclaimed: toNumber(unclaimed),
               lastFlipDate,
             };

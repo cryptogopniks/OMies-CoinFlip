@@ -12,8 +12,8 @@ export type Label = "platform";
 export const ADDRESS = {
   MAINNET: {
     MANTRA: {
-      ADMIN: "mantra1f37v0rdvrred27tlqqcpkrqpzfv6ddr2zjrm2h",
-      WORKER: "mantra1hvp3q00ypzrurd46h7c7c3hu86tx9uf80lfxn6",
+      ADMIN: "mantra1ha743nhd0d3g54d2m9m3zmgz4khvyz5qtfs7em",
+      WORKER: "mantra1ha743nhd0d3g54d2m9m3zmgz4khvyz5qtfs7em",
     },
   },
   TESTNET: {
@@ -88,14 +88,18 @@ export const CHAIN_CONFIG: ChainConfig = {
           CHAIN_ID: "mantra-1",
           RPC_LIST: ["https://rpc.mantrachain.io:443"],
           GAS_PRICE_AMOUNT: 0.02,
-          STORE_CODE_GAS_MULTIPLIER: 20,
+          STORE_CODE_GAS_MULTIPLIER: 115,
           CONTRACTS: [
             {
               WASM: "platform.wasm",
               LABEL: "platform",
-              PERMISSION: [ADDRESS.MAINNET.MANTRA.ADMIN],
+              PERMISSION: [
+                ADDRESS.MAINNET.MANTRA.ADMIN,
+                ADDRESS.TESTNET.MANTRA.ADMIN,
+              ],
               INIT_MSG: toJson<PlatformTypes.InstantiateMsg>({
-                bet: { min: `${500_000}`, max: `${10_000_000}` },
+                worker: ADDRESS.MAINNET.MANTRA.WORKER,
+                bet: { min: `${100_000}`, max: `${20_000_000}` },
               }),
               MIGRATE_MSG: toJson<PlatformTypes.MigrateMsg>({
                 version: "1.0.0",
@@ -103,8 +107,9 @@ export const CHAIN_CONFIG: ChainConfig = {
               UPDATE_MSG: toJson<PlatformTypes.ExecuteMsg>({
                 update_config: {},
               }),
-              CODE: 0,
-              ADDRESS: "",
+              CODE: 11,
+              ADDRESS:
+                "mantra10788fkzah89xrdm27zkj5yvhj9x3494lxawzm5qq3vvxcqz2yzaql64cxj",
             },
           ],
           IBC: [],

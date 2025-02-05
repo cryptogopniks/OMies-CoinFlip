@@ -38,19 +38,20 @@
             "https://rpc.mantrachain.io:443"
           ],
           "GAS_PRICE_AMOUNT": 0.02,
-          "STORE_CODE_GAS_MULTIPLIER": 20,
+          "STORE_CODE_GAS_MULTIPLIER": 115,
           "CONTRACTS": [
             {
               "WASM": "platform.wasm",
               "LABEL": "platform",
               "PERMISSION": [
+                "mantra1ha743nhd0d3g54d2m9m3zmgz4khvyz5qtfs7em",
                 "mantra1f37v0rdvrred27tlqqcpkrqpzfv6ddr2zjrm2h"
               ],
-              "INIT_MSG": "{\"bet\":{\"min\":\"500000\",\"max\":\"10000000\"}}",
+              "INIT_MSG": "{\"worker\":\"mantra1ha743nhd0d3g54d2m9m3zmgz4khvyz5qtfs7em\",\"bet\":{\"min\":\"100000\",\"max\":\"20000000\"}}",
               "MIGRATE_MSG": "{\"version\":\"1.0.0\"}",
               "UPDATE_MSG": "{\"update_config\":{}}",
-              "CODE": 0,
-              "ADDRESS": ""
+              "CODE": 11,
+              "ADDRESS": "mantra10788fkzah89xrdm27zkj5yvhj9x3494lxawzm5qq3vvxcqz2yzaql64cxj"
             }
           ],
           "IBC": []
